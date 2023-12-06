@@ -1,5 +1,4 @@
 import Data.List (sort)
-import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
@@ -79,20 +78,22 @@ generatePreSets v = generatePreSets' (v - 1)
   checks if a valid, correctly ordered set is possible
 -}
 getPossibleSet :: Set Card -> Int -> [Card] -> Maybe [Card]
-getPossibleSet dealtCards v preSet@(firstCard : _) =
+getPossibleSet dealtCards v preSet =
   case getMissingCard preSet v of
     Nothing -> Nothing
     Just missingCard ->
-      if Set.member missingCard dealtCards && missingCard < firstCard
+      if Set.member missingCard dealtCards && missingCard < head preSet
         then Just $ missingCard : preSet
         else Nothing
 
 getMissingValue :: Int -> [Int] -> Maybe Int
-getMissingValue v values@(firstVal : _)
-  | Map.size m == 1 = Just firstVal
-  | all (== 1) (Map.elems m) = Just $ (v * (v + 1) `div` 2) - sum (Map.keys m)
+getMissingValue v values
+  | Map.size m == 1 = Just $ head values
+  | all eqOne (Map.elems m) = Just $ (v * (v + 1) `div` 2) - sum (Map.keys m)
   | otherwise = Nothing
   where
+    eqOne :: Int -> Bool
+    eqOne = (== 1)
     m = Map.fromListWith (+) [(val, 1) | val <- values]
 
 getMissingCard :: [Card] -> Int -> Maybe Card
@@ -103,3 +104,4 @@ getMissingCard preSet v =
     transpose ([] : _) = []
     transpose x = map head x : transpose (map tail x)
     transposedList = transpose preSet
+-- https://stackoverflow.com/questions/2578930/understanding-this-matrix-transposition-function-in-haskell
