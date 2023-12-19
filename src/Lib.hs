@@ -1,5 +1,6 @@
 module Lib
-  ( possibleSets,
+  ( dealCardsRandom,
+    possibleSets,
   )
 where
 
@@ -23,10 +24,9 @@ main function: given parameters
   p: number of traits
   g: a random number generator
 -}
-possibleSets :: Int -> Int -> Int -> StdGen -> [[Card]]
-possibleSets c v p g =
-  let dealtCards = dealCardsRandom c v p g
-      preSets = generatePreSets v dealtCards
+possibleSets :: [Card] -> Int -> [[Card]]
+possibleSets dealtCards v =
+  let preSets = generatePreSets v dealtCards
    in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
 
 {-
