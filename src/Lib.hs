@@ -4,10 +4,10 @@ module Lib
 where
 
 import Data.List (sort)
-import Data.Map qualified as Map
+import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
-import Data.Set qualified as Set
+import qualified Data.Set as Set
 import System.Random (Random (randomR), StdGen)
 
 {-
