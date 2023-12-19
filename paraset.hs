@@ -3,6 +3,7 @@ import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
+import System.Random
 
 {-
 cards are represented as lists, where the index represents the trait, and
@@ -18,7 +19,7 @@ main function: given parameters
 -}
 possibleSets :: Int -> Int -> Int -> [[Card]]
 possibleSets c v p =
-  let dealtCards = dealCards c v p
+  let dealtCards = dealCardsRandom c v p
       preSets = generatePreSets v dealtCards
    in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
 
@@ -46,7 +47,7 @@ code generated solutions
   hard coded for now so we can check
 -}
 dealCards :: Int -> Int -> Int -> [Card]
-dealCards c v p =
+dealCards _ _ _ =
   sort
     [ [3, 3, 3, 1],
       [2, 1, 1, 2],
@@ -61,6 +62,50 @@ dealCards c v p =
       [1, 2, 1, 1],
       [2, 1, 3, 2]
     ]
+
+{- 
+  We generate c randomly dealt cards through generating random "swaps".
+  The initial "deck" consists of all cards in sorted order (here, each card 
+  is represented as a single integer from 0 to v^p - 1, instead of its constituent parts.)
+  Then we generate c "swaps", where for each of the first c positions in the deck,
+  we swap the card with any subsequent card in the deck. After performing all swaps, we
+  return the first c cards in the deck.
+
+  This approach is inspired by https://wiki.haskell.org/Random_shuffle (Drawing without replacement).
+-}
+
+-- This generates all c swaps.
+constructRandomList :: Int -> Int -> Int -> Int -> StdGen -> [(Int, Int)]
+constructRandomList c v p sofar gen
+  | c == sofar = []
+  | otherwise =
+    (sofar, num) : constructRandomList c v p (sofar + 1) newGen
+    where
+      (num, newGen) = randomR (sofar, v ^ p - 1) gen
+
+-- This performs all swaps and constructs the list of returned cards.
+constructCards :: Int -> Int -> Int -> [(Int, Int)] -> Map.Map Int Int -> [Card]
+constructCards _ _ _ [] _ = []
+constructCards c v p ((cardPosition, cardIndex) : nextCards) foundNums =
+  generateCardFromIndex v p cardInSwapPos : nextCardList
+  where 
+    cardInCurrentPos = Map.findWithDefault cardPosition cardPosition foundNums
+    cardInSwapPos = Map.findWithDefault cardIndex cardIndex foundNums
+    nextCardList = constructCards c v p nextCards (Map.insert cardIndex cardInCurrentPos foundNums)
+
+-- This transforms the card from its index into its list form.
+generateCardFromIndex :: Int -> Int -> Int -> Card
+generateCardFromIndex _ 0 _ = []
+generateCardFromIndex v remainingP index =
+  remIndex + 1 : generateCardFromIndex v (remainingP - 1) num
+  where
+    (num, remIndex) = quotRem index v
+
+-- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
+dealCardsRandom :: Int -> Int -> Int -> [Card]
+dealCardsRandom c v p =
+  sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
+  where g = mkStdGen 42
 
 {-
 https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-combinations-of-a-list-in-haskell
