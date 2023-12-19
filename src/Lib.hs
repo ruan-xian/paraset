@@ -21,10 +21,11 @@ main function: given parameters
   C: number of cards dealt,
   v: number of values per trait,
   p: number of traits
+  g: a random number generator
 -}
-possibleSets :: Int -> Int -> Int -> [[Card]]
-possibleSets c v p =
-  let dealtCards = dealCardsRandom c v p
+possibleSets :: Int -> Int -> Int -> StdGen -> [[Card]]
+possibleSets c v p g =
+  let dealtCards = dealCardsRandom c v p g
       preSets = generatePreSets v dealtCards
    in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
 
@@ -51,22 +52,22 @@ code generated solutions
 {-
   hard coded for now so we can check
 -}
-dealCards :: Int -> Int -> Int -> [Card]
-dealCards _ _ _ =
-  sort
-    [ [3, 3, 3, 1],
-      [2, 1, 1, 2],
-      [1, 2, 3, 2],
-      [2, 2, 2, 3],
-      [1, 2, 2, 3],
-      [3, 1, 1, 3],
-      [2, 1, 2, 2],
-      [3, 3, 3, 3],
-      [2, 2, 2, 1],
-      [1, 1, 1, 2],
-      [1, 2, 1, 1],
-      [2, 1, 3, 2]
-    ]
+-- dealCards :: Int -> Int -> Int -> [Card]
+-- dealCards _ _ _ =
+--   sort
+--     [ [3, 3, 3, 1],
+--       [2, 1, 1, 2],
+--       [1, 2, 3, 2],
+--       [2, 2, 2, 3],
+--       [1, 2, 2, 3],
+--       [3, 1, 1, 3],
+--       [2, 1, 2, 2],
+--       [3, 3, 3, 3],
+--       [2, 2, 2, 1],
+--       [1, 1, 1, 2],
+--       [1, 2, 1, 1],
+--       [2, 1, 3, 2]
+--     ]
 
 {-
   We generate c randomly dealt cards through generating random "swaps".
@@ -107,11 +108,9 @@ generateCardFromIndex v remainingP index =
     (num, remIndex) = quotRem index v
 
 -- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
-dealCardsRandom :: Int -> Int -> Int -> [Card]
-dealCardsRandom c v p =
+dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Card]
+dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
-  where
-    g = mkStdGen 42
 
 {-
 https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-combinations-of-a-list-in-haskell
