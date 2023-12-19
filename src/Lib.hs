@@ -8,7 +8,7 @@ import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import System.Random
+import System.Random (Random (randomR), StdGen, mkStdGen)
 
 {-
 cards are represented as lists, where the index represents the trait, and
