@@ -1,9 +1,9 @@
 module Main (main) where
 
-import           Lib                (possibleSets)
-import           System.Environment (getArgs, getProgName)
-import           System.Exit        (die)
-import           System.Random      (mkStdGen)
+import Lib (possibleSets)
+import System.Environment (getArgs, getProgName)
+import System.Exit (die)
+import System.Random (mkStdGen)
 
 main :: IO ()
 main = do
