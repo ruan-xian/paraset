@@ -2,69 +2,107 @@ module Main (main) where
 
 import Control.DeepSeq
 import Control.Exception
+import Control.Monad
 import Lib (dealCardsRandom, possibleSets)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (ExitCode (ExitFailure), die, exitSuccess, exitWith)
 import System.IO
-import System.Random (mkStdGen)
+import System.Random (getStdGen, mkStdGen)
 
 data Flag
   = Silent -- -s
   | Newline -- -n
   | Deck -- -d
   | Help -- --help
-  deriving (Eq, Ord, Enum, Show, Bounded)
+  | Randseed String -- -r
+  deriving (Eq, Show)
 
-flags :: [OptDescr Flag]
-flags =
+data Options = Options
+  { optSilent :: Bool,
+    optNewline :: Bool,
+    optDeck :: Bool,
+    optHelp :: Bool,
+    optUsePresetSeed :: Bool,
+    optRandSeed :: IO String
+  }
+
+startOptions :: Options
+startOptions =
+  Options
+    { optSilent = False,
+      optNewline = False,
+      optDeck = False,
+      optHelp = False,
+      optUsePresetSeed = False,
+      optRandSeed = return "42"
+    }
+
+options :: [OptDescr (Options -> IO Options)]
+options =
   [ Option
       ['s']
       ["silent"]
-      (NoArg Silent)
+      (NoArg (\opt -> return opt {optSilent = True}))
       "Silences all output.",
     Option
       ['d']
       ["deck"]
-      (NoArg Deck)
+      (NoArg (\opt -> return opt {optDeck = True}))
       "Prints the deck generated.",
     Option
       ['n']
       ["newline"]
-      (NoArg Newline)
+      (NoArg (\opt -> return opt {optNewline = True}))
       "Prints each solution on a separate line.",
+    Option
+      ['r']
+      ["randseed"]
+      (ReqArg (\arg opt -> return opt {optUsePresetSeed = True, optRandSeed = return arg}) "42")
+      "Sets the random seed used.",
     Option
       []
       ["help"]
-      (NoArg Help)
+      (NoArg (\opt -> return opt {optHelp = True}))
       "Print this help message"
   ]
 
 main :: IO ()
 main = do
   argv <- getArgs
-  case getOpt RequireOrder flags argv of
-    (args, params, []) ->
+  case getOpt RequireOrder options argv of
+    (actions, params, []) ->
       do
-        if Help `elem` args
-          then do
-            hPutStrLn stderr (usageInfo usage flags)
-            exitSuccess
-          else do
-            case params of
-              [c, v, p] -> do
-                let g = mkStdGen 42
-                    dealtCards = dealCardsRandom (read c) (read v) (read p) g
-                res <- evaluate $ force possibleSets dealtCards (read v)
-                if Silent `elem` args
-                  then exitSuccess
-                  else
-                    if Newline `elem` args
-                      then mapM_ print res
-                      else print res
-              _ -> die $ usageInfo usage flags
+        opts <- foldl (>>=) (return startOptions) actions
+        let Options
+              { optSilent = silent,
+                optNewline = newline,
+                optDeck = deck,
+                optHelp = help,
+                optUsePresetSeed = presetSeed,
+                optRandSeed = seed
+              } = opts
+        when help $ do
+          hPutStrLn stderr (usageInfo usage options)
+          exitSuccess
+        case params of
+          [c, v, p] -> do
+            inputSeed <- seed
+            let presetG = mkStdGen $ read inputSeed
+            g <- if presetSeed then return presetG else getStdGen
+            let dealtCards = dealCardsRandom (read c) (read v) (read p) g
+            res <- evaluate $ force possibleSets dealtCards (read v)
+            when silent exitSuccess
+            when deck $ do
+              putStrLn "Dealt cards:"
+              print dealtCards
+              putStrLn "Solutions:"
+            if newline
+              then mapM_ print res
+              else print res
+          _ -> die $ usageInfo usage options
     (_, _, errs) -> do
-      hPutStrLn stderr (concat errs ++ usageInfo usage flags)
+      hPutStrLn stderr (concat errs ++ usageInfo usage options)
       exitWith (ExitFailure 1)
   where
     usage = "Usage: paraset [-vn] <cards dealt> <number of values> <number of traits>"
