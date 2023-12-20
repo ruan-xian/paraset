@@ -68,7 +68,6 @@ generateCardFromIndex v remainingP index =
   where
     (num, remIndex) = quotRem index v
 
--- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
 dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Card]
 dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
@@ -90,13 +89,6 @@ generatePreSetsWithDepth v = generatePreSetsWithDepth' (v - 1)
   where
     generatePreSetsWithDepth' 0 _ _ = [[]]
     generatePreSetsWithDepth' _ _ [] = []
-    --     generatePreSets' n (x : xs) = map (x :) (generatePreSets' (n - 1) xs) ++ generatePreSets' n xs
-
-    -- generatePreSets' n (x : xs) =
-    --   let preImage1 = generatePreSets' (n - 1) xs
-    --       preImage2 = generatePreSets' n xs
-    --    in preImage2 `par` (map (x :) preImage1 ++ preImage2)
-
     generatePreSetsWithDepth' n 0 xs = generatePreSets (n + 1) xs
     generatePreSetsWithDepth' n d (x : xs) = ps1 `par` ps2 `seq` (map (x :) ps2 ++ ps1)
       where

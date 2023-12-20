@@ -4,7 +4,6 @@ module V3
   )
 where
 
-import Control.DeepSeq
 import Control.Parallel.Strategies (parMap, rseq)
 import Data.List (sort)
 import Data.List.Split (chunksOf)
@@ -71,7 +70,6 @@ generateCardFromIndex v remainingP index =
   where
     (num, remIndex) = quotRem index v
 
--- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
 dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Card]
 dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
