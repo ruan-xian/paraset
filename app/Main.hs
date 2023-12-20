@@ -1,12 +1,19 @@
 module Main (main) where
 
-import Control.DeepSeq
-import Control.Exception
-import Control.Monad
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
+import Control.Monad (when)
+import ParsetBase qualified
 import System.Console.GetOpt
+  ( ArgDescr (NoArg, ReqArg),
+    ArgOrder (RequireOrder),
+    OptDescr (..),
+    getOpt,
+    usageInfo,
+  )
 import System.Environment (getArgs)
 import System.Exit (ExitCode (ExitFailure), die, exitSuccess, exitWith)
-import System.IO
+import System.IO (hPutStrLn, stderr)
 import System.Random (StdGen, getStdGen, mkStdGen)
 import V1 qualified
 import V2 qualified
@@ -81,19 +88,19 @@ getVersionResults c v p g version =
     "6P" ->
       (force $ V6P.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V6P.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "6C" ->
       (force $ V6C.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V6C.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "6" ->
       (force $ V6.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V6.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "5" ->
       (force $ V5.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V5.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "4" ->
       (force $ V4.possibleSets dealtCards v p, map (V4.generateCardFromIndex v p) dealtCards)
       where
@@ -101,15 +108,15 @@ getVersionResults c v p g version =
     "3" ->
       (force $ V3.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V3.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "2" ->
       (force $ V2.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V2.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     "1" ->
       (force $ V1.possibleSets dealtCards v, dealtCards)
       where
-        dealtCards = V1.dealCardsRandom c v p g
+        dealtCards = ParsetBase.dealCardsRandom c v p g
     _ -> error "Invalid version"
 
 main :: IO ()

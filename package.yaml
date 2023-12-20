@@ -38,8 +38,6 @@ ghc-options:
   - -Wpartial-fields
   - -Wredundant-constraints
   - -XGHC2021
-  - -threaded
-  - -eventlog
 
 library:
   source-dirs: src

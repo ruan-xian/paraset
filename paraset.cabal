@@ -25,6 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      Algo1Base
+      Algo2Base
+      ParsetBase
       V1
       V2
       V3
@@ -33,13 +36,14 @@ library
       V6Chunks
       V6Naive
       V6Parbuffer
+      V7
   other-modules:
       Paths_paraset
   autogen-modules:
       Paths_paraset
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021 -threaded -eventlog
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021
   build-depends:
       base >=4.7 && <5
     , containers >=0.6.7 && <0.7
@@ -57,7 +61,7 @@ executable paraset-exe
       Paths_paraset
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021 -threaded -eventlog -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers >=0.6.7 && <0.7
@@ -77,7 +81,7 @@ test-suite paraset-test
       Paths_paraset
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021 -threaded -eventlog -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XGHC2021 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
     , base >=4.7 && <5

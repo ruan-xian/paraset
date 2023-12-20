@@ -5,7 +5,6 @@ module V4
   )
 where
 
-import Control.DeepSeq
 import Control.Parallel.Strategies (parMap, rseq)
 import Data.List (sort)
 import Data.List.Split (chunksOf)
