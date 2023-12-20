@@ -67,7 +67,7 @@ options =
       ['v']
       ["version"]
       (ReqArg (\arg opt -> return opt {optVersion = return arg}) "6P")
-      "Sets the version used (latest = 6). Valid options: 6P, 6C, 6, 5, 4",
+      "Sets the version used (latest = 6). Valid options: 6P, 6C, 6, 5, 4, 3, 2, 1",
     Option
       []
       ["help"]
