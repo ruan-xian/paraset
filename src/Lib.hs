@@ -4,11 +4,15 @@ module Lib
   )
 where
 
+import Control.DeepSeq
+import Control.Exception (evaluate)
+import Control.Parallel.Strategies (parMap, rseq)
 import Data.List (sort)
-import qualified Data.Map as Map
-import Data.Maybe (mapMaybe)
+import Data.List.Split (chunksOf)
+import Data.Map qualified as Map
+import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import System.Random (Random (randomR), StdGen)
 
 {-
@@ -26,8 +30,15 @@ main function: given parameters
 -}
 possibleSets :: [Card] -> Int -> [[Card]]
 possibleSets dealtCards v =
-  let preSets = generatePreSets v dealtCards
-   in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
+  let preSets = force $ generatePreSets v dealtCards
+      --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
+      preSetChunks = chunksOf 10000 preSets
+   in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v)) preSetChunks
+
+--     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
+--  in catMaybes maybeSets
+
+-- mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
 
 {-
 human solution
