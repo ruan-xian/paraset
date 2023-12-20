@@ -1,12 +1,11 @@
 module V6Parbuffer
   ( dealCardsRandom,
     possibleSets,
-    generateCardFromIndex,
   )
 where
 
 import Control.Parallel.Strategies (parBuffer, rseq, using)
-import Data.Bits (Bits (bit, shiftR, testBit, (.&.), (.|.)))
+import Data.Bits
 import Data.List (sort)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes)
@@ -18,8 +17,6 @@ import System.Random (Random (randomR), StdGen)
 cards are represented as lists, where the index represents the trait, and
 c[i] represents the value of trait i
 -}
-type CardIndex = Integer
-
 type Card = [Int]
 
 {-
@@ -29,12 +26,12 @@ main function: given parameters
   p: number of traits
   g: a random number generator
 -}
-possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
-possibleSets dealtCards v p =
+possibleSets :: [Card] -> Int -> [[Card]]
+possibleSets dealtCards v =
   let c = length dealtCards
    in catMaybes
         ( map
-            (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
+            (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v)
             (getBitstrings c (v - 1))
             `using` parBuffer 10000 rseq
         )
@@ -51,7 +48,7 @@ possibleSets dealtCards v p =
 -}
 
 -- This generates all c swaps.
-constructRandomList :: Int -> Int -> Int -> Int -> StdGen -> [(CardIndex, CardIndex)]
+constructRandomList :: Int -> Int -> Int -> Int -> StdGen -> [(Integer, Integer)]
 constructRandomList c v p sofar gen
   | c == sofar = []
   | otherwise =
@@ -60,30 +57,25 @@ constructRandomList c v p sofar gen
     (num, newGen) = randomR (fromIntegral sofar, fromIntegral $ v ^ p - 1) gen
 
 -- This performs all swaps and constructs the list of returned cards.
-constructCards :: Int -> Int -> Int -> [(CardIndex, CardIndex)] -> Map.Map CardIndex CardIndex -> [CardIndex]
+constructCards :: Int -> Int -> Int -> [(Integer, Integer)] -> Map.Map Integer Integer -> [Card]
 constructCards _ _ _ [] _ = []
 constructCards c v p ((cardPosition, cardIndex) : nextCards) foundNums =
-  cardInSwapPos : nextCardList
+  generateCardFromIndex v p cardInSwapPos : nextCardList
   where
     cardInCurrentPos = Map.findWithDefault cardPosition cardPosition foundNums
     cardInSwapPos = Map.findWithDefault cardIndex cardIndex foundNums
     nextCardList = constructCards c v p nextCards (Map.insert cardIndex cardInCurrentPos foundNums)
 
 -- This transforms the card from its index into its list form.
-generateCardFromIndex :: Int -> Int -> CardIndex -> Card
+generateCardFromIndex :: Int -> Int -> Integer -> Card
 generateCardFromIndex _ 0 _ = []
 generateCardFromIndex v remainingP index =
   fromInteger remIndex + 1 : generateCardFromIndex v (remainingP - 1) num
   where
     (num, remIndex) = quotRem index $ fromIntegral v
 
-generateIndexFromCard :: Int -> Card -> CardIndex
-generateIndexFromCard _ [] = 0
-generateIndexFromCard v (x : xs) =
-  (fromIntegral x - 1) + fromIntegral v * generateIndexFromCard v xs
-
 -- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
-dealCardsRandom :: Int -> Int -> Int -> StdGen -> [CardIndex]
+dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Card]
 dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
 
@@ -93,12 +85,12 @@ faster ones here https://stackoverflow.com/questions/26727673/haskell-comparison
     are not great bc `subsequences` can get really huge if `length dealtCards` is large
 -}
 
-bitStringToMaybeSet :: [CardIndex] -> Set CardIndex -> Int -> Int -> Integer -> Maybe [Card]
-bitStringToMaybeSet dealtCards dealtCardsSet v p bitstring =
-  getPossibleSet dealtCardsSet v p $ bitStringToPreset dealtCards bitstring
+bitStringToMaybeSet :: [Card] -> Set Card -> Int -> Integer -> Maybe [Card]
+bitStringToMaybeSet dealtCards dealtCardsSet v bitstring =
+  getPossibleSet dealtCardsSet v $ bitStringToPreset dealtCards bitstring
 
 getBitstrings :: Int -> Int -> [Integer]
-getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
+getBitstrings n k = takeWhile (< bit (n + 1)) $ iterate next (bit k - 1)
   where
     next x =
       let smallest = x .&. negate x
@@ -106,7 +98,7 @@ getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
           new_smallest = ripple .&. negate ripple
        in ripple .|. (((new_smallest `div` smallest) `shiftR` 1) - 1)
 
-bitStringToPreset :: [CardIndex] -> Integer -> [CardIndex]
+bitStringToPreset :: [Card] -> Integer -> [Card]
 bitStringToPreset dealtCards bitstring =
   [x | (x, i) <- zip dealtCards [0 ..], testBit bitstring i]
 
@@ -121,13 +113,13 @@ map bigger function over getBitstrings
 {-
   checks if a valid, correctly ordered set is possible
 -}
-getPossibleSet :: Set CardIndex -> Int -> Int -> [CardIndex] -> Maybe [Card]
-getPossibleSet dealtCards v p preSet =
-  case getMissingCard preSet v p of
+getPossibleSet :: Set Card -> Int -> [Card] -> Maybe [Card]
+getPossibleSet dealtCards v preSet =
+  case getMissingCard preSet v of
     Nothing -> Nothing
     Just missingCard ->
-      if Set.member (generateIndexFromCard v missingCard) dealtCards && generateIndexFromCard v missingCard < head preSet
-        then Just $ missingCard : map (generateCardFromIndex v p) preSet
+      if Set.member missingCard dealtCards && missingCard < head preSet
+        then Just $ missingCard : preSet
         else Nothing
 
 getMissingValue :: Int -> [Int] -> Maybe Int
@@ -140,13 +132,13 @@ getMissingValue v values
     eqOne = (== 1)
     m = Map.fromListWith (+) [(val, 1) | val <- values]
 
-getMissingCard :: [CardIndex] -> Int -> Int -> Maybe Card
-getMissingCard preSet v p =
+getMissingCard :: [Card] -> Int -> Maybe Card
+getMissingCard preSet v =
   mapM (getMissingValue v) transposedList
   where
     transpose :: [[a]] -> [[a]]
     transpose ([] : _) = []
     transpose x = map head x : transpose (map tail x)
-    transposedList = transpose (map (generateCardFromIndex v p) preSet)
+    transposedList = transpose preSet
 
 -- https://stackoverflow.com/questions/2578930/understanding-this-matrix-transposition-function-in-haskell
