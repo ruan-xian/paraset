@@ -33,7 +33,7 @@ possibleSets dealtCards v =
         ( map
             (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v)
             (getBitstrings c (v - 1))
-            `using` parBuffer 10000 rseq
+            `using` parBuffer 5000 rseq
         )
 
 {-
