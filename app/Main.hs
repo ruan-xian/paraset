@@ -83,7 +83,7 @@ getVersionResults c v p g version =
       where
         dealtCards = V6P.dealCardsRandom c v p g
     "6C" ->
-      (force $ V6C.possibleSets dealtCards v p, map (V6C.generateCardFromIndex v p) dealtCards)
+      (force $ V6C.possibleSets dealtCards v, dealtCards)
       where
         dealtCards = V6C.dealCardsRandom c v p g
     "6" ->
