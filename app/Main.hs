@@ -91,7 +91,7 @@ main = do
             let presetG = mkStdGen $ read inputSeed
             g <- if presetSeed then return presetG else getStdGen
             let dealtCards = dealCardsRandom (read c) (read v) (read p) g
-            res <- evaluate $ force possibleSets dealtCards (read v)
+            res <- evaluate $ force $ possibleSets dealtCards (read v)
             when silent exitSuccess
             when deck $ do
               putStrLn "Dealt cards:"
@@ -105,4 +105,4 @@ main = do
       hPutStrLn stderr (concat errs ++ usageInfo usage options)
       exitWith (ExitFailure 1)
   where
-    usage = "Usage: paraset [-vn] <cards dealt> <number of values> <number of traits>"
+    usage = "Usage: paraset [flags] <cards dealt> <number of values> <number of traits>"
