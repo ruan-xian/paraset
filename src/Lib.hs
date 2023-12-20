@@ -20,6 +20,8 @@ import System.Random (Random (randomR), StdGen)
 cards are represented as lists, where the index represents the trait, and
 c[i] represents the value of trait i
 -}
+type CardIndex = Integer
+
 type Card = [Int]
 
 {-
@@ -29,7 +31,7 @@ main function: given parameters
   p: number of traits
   g: a random number generator
 -}
-possibleSets :: [Int] -> Int -> Int -> [[Card]]
+possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
 possibleSets dealtCards v p =
   let preSets = force $ generatePreSets v dealtCards
       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
@@ -93,16 +95,16 @@ code generated solutions
 -}
 
 -- This generates all c swaps.
-constructRandomList :: Int -> Int -> Int -> Int -> StdGen -> [(Int, Int)]
+constructRandomList :: Int -> Int -> Int -> Int -> StdGen -> [(CardIndex, CardIndex)]
 constructRandomList c v p sofar gen
   | c == sofar = []
   | otherwise =
-      (sofar, num) : constructRandomList c v p (sofar + 1) newGen
+      (fromIntegral sofar, num) : constructRandomList c v p (sofar + 1) newGen
   where
-    (num, newGen) = randomR (sofar, v ^ p - 1) gen
+    (num, newGen) = randomR (fromIntegral sofar, fromIntegral $ v ^ p - 1) gen
 
 -- This performs all swaps and constructs the list of returned cards.
-constructCards :: Int -> Int -> Int -> [(Int, Int)] -> Map.Map Int Int -> [Int]
+constructCards :: Int -> Int -> Int -> [(CardIndex, CardIndex)] -> Map.Map CardIndex CardIndex -> [CardIndex]
 constructCards _ _ _ [] _ = []
 constructCards c v p ((cardPosition, cardIndex) : nextCards) foundNums =
   cardInSwapPos : nextCardList
@@ -112,20 +114,20 @@ constructCards c v p ((cardPosition, cardIndex) : nextCards) foundNums =
     nextCardList = constructCards c v p nextCards (Map.insert cardIndex cardInCurrentPos foundNums)
 
 -- This transforms the card from its index into its list form.
-generateCardFromIndex :: Int -> Int -> Int -> Card
+generateCardFromIndex :: Int -> Int -> CardIndex -> Card
 generateCardFromIndex _ 0 _ = []
 generateCardFromIndex v remainingP index =
-  remIndex + 1 : generateCardFromIndex v (remainingP - 1) num
+  fromInteger remIndex + 1 : generateCardFromIndex v (remainingP - 1) num
   where
-    (num, remIndex) = quotRem index v
+    (num, remIndex) = quotRem index $ fromIntegral v
 
-generateIndexFromCard :: Int -> Card -> Int
+generateIndexFromCard :: Int -> Card -> CardIndex
 generateIndexFromCard _ [] = 0
 generateIndexFromCard v (x : xs) =
-  (x - 1) + v * generateIndexFromCard v xs
+  (fromIntegral x - 1) + fromIntegral v * generateIndexFromCard v xs
 
 -- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
-dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Int]
+dealCardsRandom :: Int -> Int -> Int -> StdGen -> [CardIndex]
 dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
 
@@ -134,7 +136,7 @@ https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-com
 faster ones here https://stackoverflow.com/questions/26727673/haskell-comparison-of-techniques-for-generating-combinations
     are not great bc `subsequences` can get really huge if `length dealtCards` is large
 -}
-generatePreSets :: Int -> [Int] -> [[Int]]
+generatePreSets :: Int -> [CardIndex] -> [[CardIndex]]
 generatePreSets v = generatePreSets' (v - 1)
   where
     generatePreSets' 0 _ = [[]]
@@ -163,7 +165,7 @@ map bigger function over getBitstrings
 {-
   checks if a valid, correctly ordered set is possible
 -}
-getPossibleSet :: Set Int -> Int -> Int -> [Int] -> Maybe [Card]
+getPossibleSet :: Set CardIndex -> Int -> Int -> [CardIndex] -> Maybe [Card]
 getPossibleSet dealtCards v p preSet =
   case getMissingCard preSet v p of
     Nothing -> Nothing
@@ -182,7 +184,7 @@ getMissingValue v values
     eqOne = (== 1)
     m = Map.fromListWith (+) [(val, 1) | val <- values]
 
-getMissingCard :: [Int] -> Int -> Int -> Maybe Card
+getMissingCard :: [CardIndex] -> Int -> Int -> Maybe Card
 getMissingCard preSet v p =
   mapM (getMissingValue v) transposedList
   where
