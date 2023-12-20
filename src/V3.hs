@@ -29,7 +29,7 @@ main function: given parameters
 -}
 possibleSets :: [Card] -> Int -> [[Card]]
 possibleSets dealtCards v =
-  let preSets = force $ generatePreSets v dealtCards
+  let preSets = generatePreSets v dealtCards
       preSetChunks = chunksOf 10000 preSets
    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v)) preSetChunks
 
