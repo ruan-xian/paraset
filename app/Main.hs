@@ -79,7 +79,7 @@ getVersionResults :: Int -> Int -> Int -> StdGen -> String -> ([[Card]], [Card])
 getVersionResults c v p g version =
   case version of
     "6P" ->
-      (force $ V6P.possibleSets dealtCards v p, map (V6P.generateCardFromIndex v p) dealtCards)
+      (force $ V6P.possibleSets dealtCards v, dealtCards)
       where
         dealtCards = V6P.dealCardsRandom c v p g
     "6C" ->
