@@ -1,16 +1,16 @@
 module Lib
   ( dealCardsRandom,
     possibleSets,
+    generateCardFromIndex,
   )
 where
 
 import Control.DeepSeq
-import Control.Exception (evaluate)
 import Control.Parallel.Strategies (parMap, rseq)
 import Data.List (sort)
 import Data.List.Split (chunksOf)
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import System.Random (Random (randomR), StdGen)
@@ -28,12 +28,12 @@ main function: given parameters
   p: number of traits
   g: a random number generator
 -}
-possibleSets :: [Card] -> Int -> [[Card]]
-possibleSets dealtCards v =
+possibleSets :: [Int] -> Int -> Int -> [[Card]]
+possibleSets dealtCards v p =
   let preSets = force $ generatePreSets v dealtCards
       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
       preSetChunks = chunksOf 10000 preSets
-   in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v)) preSetChunks
+   in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
 
 --     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
 --  in catMaybes maybeSets
@@ -101,10 +101,10 @@ constructRandomList c v p sofar gen
     (num, newGen) = randomR (sofar, v ^ p - 1) gen
 
 -- This performs all swaps and constructs the list of returned cards.
-constructCards :: Int -> Int -> Int -> [(Int, Int)] -> Map.Map Int Int -> [Card]
+constructCards :: Int -> Int -> Int -> [(Int, Int)] -> Map.Map Int Int -> [Int]
 constructCards _ _ _ [] _ = []
 constructCards c v p ((cardPosition, cardIndex) : nextCards) foundNums =
-  generateCardFromIndex v p cardInSwapPos : nextCardList
+  cardInSwapPos : nextCardList
   where
     cardInCurrentPos = Map.findWithDefault cardPosition cardPosition foundNums
     cardInSwapPos = Map.findWithDefault cardIndex cardIndex foundNums
@@ -118,8 +118,13 @@ generateCardFromIndex v remainingP index =
   where
     (num, remIndex) = quotRem index v
 
+generateIndexFromCard :: Int -> Card -> Int
+generateIndexFromCard _ [] = 0
+generateIndexFromCard v (x : xs) =
+  (x - 1) + v * generateIndexFromCard v xs
+
 -- Calls all necessary functions. Should probably be refactored to use a random seed (would need to become IO monad).
-dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Card]
+dealCardsRandom :: Int -> Int -> Int -> StdGen -> [Int]
 dealCardsRandom c v p g =
   sort $ constructCards c v p (constructRandomList c v p 0 g) Map.empty
 
@@ -128,7 +133,7 @@ https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-com
 faster ones here https://stackoverflow.com/questions/26727673/haskell-comparison-of-techniques-for-generating-combinations
     are not great bc `subsequences` can get really huge if `length dealtCards` is large
 -}
-generatePreSets :: Int -> [Card] -> [[Card]]
+generatePreSets :: Int -> [Int] -> [[Int]]
 generatePreSets v = generatePreSets' (v - 1)
   where
     generatePreSets' 0 _ = [[]]
@@ -138,13 +143,13 @@ generatePreSets v = generatePreSets' (v - 1)
 {-
   checks if a valid, correctly ordered set is possible
 -}
-getPossibleSet :: Set Card -> Int -> [Card] -> Maybe [Card]
-getPossibleSet dealtCards v preSet =
-  case getMissingCard preSet v of
+getPossibleSet :: Set Int -> Int -> Int -> [Int] -> Maybe [Card]
+getPossibleSet dealtCards v p preSet =
+  case getMissingCard preSet v p of
     Nothing -> Nothing
     Just missingCard ->
-      if Set.member missingCard dealtCards && missingCard < head preSet
-        then Just $ missingCard : preSet
+      if Set.member (generateIndexFromCard v missingCard) dealtCards && generateIndexFromCard v missingCard < head preSet
+        then Just $ missingCard : map (generateCardFromIndex v p) preSet
         else Nothing
 
 getMissingValue :: Int -> [Int] -> Maybe Int
@@ -157,13 +162,13 @@ getMissingValue v values
     eqOne = (== 1)
     m = Map.fromListWith (+) [(val, 1) | val <- values]
 
-getMissingCard :: [Card] -> Int -> Maybe Card
-getMissingCard preSet v =
+getMissingCard :: [Int] -> Int -> Int -> Maybe Card
+getMissingCard preSet v p =
   mapM (getMissingValue v) transposedList
   where
     transpose :: [[a]] -> [[a]]
     transpose ([] : _) = []
     transpose x = map head x : transpose (map tail x)
-    transposedList = transpose preSet
+    transposedList = transpose (map (generateCardFromIndex v p) preSet)
 
 -- https://stackoverflow.com/questions/2578930/understanding-this-matrix-transposition-function-in-haskell

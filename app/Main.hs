@@ -3,7 +3,7 @@ module Main (main) where
 import Control.DeepSeq
 import Control.Exception
 import Control.Monad
-import Lib (dealCardsRandom, possibleSets)
+import Lib (dealCardsRandom, generateCardFromIndex, possibleSets)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (ExitCode (ExitFailure), die, exitSuccess, exitWith)
@@ -91,11 +91,11 @@ main = do
             let presetG = mkStdGen $ read inputSeed
             g <- if presetSeed then return presetG else getStdGen
             let dealtCards = dealCardsRandom (read c) (read v) (read p) g
-            res <- evaluate $ force $ possibleSets dealtCards (read v)
+            res <- evaluate $ force $ possibleSets dealtCards (read v) (read p)
             when silent exitSuccess
             when deck $ do
               putStrLn "Dealt cards:"
-              print dealtCards
+              print $ map (generateCardFromIndex (read v) (read p)) dealtCards
               putStrLn "Solutions:"
             if newline
               then mapM_ print res
