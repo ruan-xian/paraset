@@ -42,14 +42,14 @@ possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
 --   let c = length dealtCards
 --    in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
 
-possibleSets dealtCards v p =
-  let c = length dealtCards
-      bitStringChunks = chunksOf 10000 $ getBitstrings c (v - 1)
-   in concat $
-        parMap
-          rseq
-          (mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p))
-          bitStringChunks
+-- possibleSets dealtCards v p =
+--   let c = length dealtCards
+--       bitStringChunks = chunksOf 10000 $ getBitstrings c (v - 1)
+--    in concat $
+--         parMap
+--           rseq
+--           (mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p))
+--           bitStringChunks
 
 -- possibleSets dealtCards v p =
 --   let c = length dealtCards
@@ -59,14 +59,14 @@ possibleSets dealtCards v p =
 --           (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
 --           (getBitstrings c (v - 1))
 
--- possibleSets dealtCards v p =
---   let c = length dealtCards
---    in catMaybes
---         ( map
---             (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
---             (getBitstrings c (v - 1))
---             `using` parBuffer 1000 rseq
---         )
+possibleSets dealtCards v p =
+  let c = length dealtCards
+   in catMaybes
+        ( map
+            (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
+            (getBitstrings c (v - 1))
+            `using` parBuffer 1000 rseq
+        )
 
 --     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
 --  in catMaybes maybeSets
