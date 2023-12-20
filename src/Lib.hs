@@ -32,11 +32,14 @@ main function: given parameters
   g: a random number generator
 -}
 possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
+-- possibleSets dealtCards v p =
+--   let preSets = force $ generatePreSets v dealtCards
+--       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
+--       preSetChunks = chunksOf 10000 preSets
+--    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
 possibleSets dealtCards v p =
-  let preSets = force $ generatePreSets v dealtCards
-      --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
-      preSetChunks = chunksOf 10000 preSets
-   in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
+  let c = length dealtCards
+   in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
 
 --     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
 --  in catMaybes maybeSets
@@ -136,12 +139,16 @@ https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-com
 faster ones here https://stackoverflow.com/questions/26727673/haskell-comparison-of-techniques-for-generating-combinations
     are not great bc `subsequences` can get really huge if `length dealtCards` is large
 -}
-generatePreSets :: Int -> [CardIndex] -> [[CardIndex]]
-generatePreSets v = generatePreSets' (v - 1)
-  where
-    generatePreSets' 0 _ = [[]]
-    generatePreSets' _ [] = []
-    generatePreSets' n (x : xs) = map (x :) (generatePreSets' (n - 1) xs) ++ generatePreSets' n xs
+-- generatePreSets :: Int -> [CardIndex] -> [[CardIndex]]
+-- generatePreSets v = generatePreSets' (v - 1)
+--   where
+--     generatePreSets' 0 _ = [[]]
+--     generatePreSets' _ [] = []
+--     generatePreSets' n (x : xs) = map (x :) (generatePreSets' (n - 1) xs) ++ generatePreSets' n xs
+
+bitStringToMaybeSet :: [CardIndex] -> Set CardIndex -> Int -> Int -> Integer -> Maybe [Card]
+bitStringToMaybeSet dealtCards dealtCardsSet v p bitstring =
+  getPossibleSet dealtCardsSet v p $ bitStringToPreset dealtCards bitstring
 
 getBitstrings :: Int -> Int -> [Integer]
 getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
@@ -150,9 +157,11 @@ getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
       let smallest = x .&. negate x
           ripple = x + smallest
           new_smallest = ripple .&. negate ripple
-       in ripple .|. new_smallest `div` smallest `shiftR` 1 - 1
+       in ripple .|. (((new_smallest `div` smallest) `shiftR` 1) - 1)
 
--- bitStringToPreset
+bitStringToPreset :: [CardIndex] -> Integer -> [CardIndex]
+bitStringToPreset dealtCards bitstring =
+  [x | (x, i) <- zip dealtCards [0 ..], testBit bitstring i]
 
 {-
 function: given a bitstring, parse it into a preset
