@@ -26,6 +26,13 @@ source-repository head
 library
   exposed-modules:
       V6Parbuffer
+      V6Chunks
+      V6Naive
+      V5
+      V4
+      V3
+      V2
+      V1
   other-modules:
       Paths_paraset
   autogen-modules:

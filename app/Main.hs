@@ -8,6 +8,13 @@ import System.Environment (getArgs)
 import System.Exit (ExitCode (ExitFailure), die, exitSuccess, exitWith)
 import System.IO
 import System.Random (StdGen, getStdGen, mkStdGen)
+import V1 qualified
+import V2 qualified
+import V3 qualified
+import V4 qualified
+import V5 qualified
+import V6Chunks qualified as V6C
+import V6Naive qualified as V6
 import V6Parbuffer qualified as V6P
 
 type Card = [Int]
@@ -31,7 +38,7 @@ startOptions =
       optHelp = False,
       optUsePresetSeed = False,
       optRandSeed = return "42",
-      optVersion = return "6"
+      optVersion = return "6P"
     }
 
 options :: [OptDescr (Options -> IO Options)]
@@ -59,8 +66,8 @@ options =
     Option
       ['v']
       ["version"]
-      (ReqArg (\arg opt -> return opt {optVersion = return arg}) "6")
-      "Sets the version used (latest = 6). Valid options: 6P,",
+      (ReqArg (\arg opt -> return opt {optVersion = return arg}) "6P")
+      "Sets the version used (latest = 6). Valid options: 6P, 6C, 6, 5, 4",
     Option
       []
       ["help"]
@@ -75,6 +82,34 @@ getVersionResults c v p g version =
       (force $ V6P.possibleSets dealtCards v p, map (V6P.generateCardFromIndex v p) dealtCards)
       where
         dealtCards = V6P.dealCardsRandom c v p g
+    "6C" ->
+      (force $ V6C.possibleSets dealtCards v p, map (V6C.generateCardFromIndex v p) dealtCards)
+      where
+        dealtCards = V6C.dealCardsRandom c v p g
+    "6" ->
+      (force $ V6.possibleSets dealtCards v p, map (V6.generateCardFromIndex v p) dealtCards)
+      where
+        dealtCards = V6.dealCardsRandom c v p g
+    "5" ->
+      (force $ V5.possibleSets dealtCards v p, map (V5.generateCardFromIndex v p) dealtCards)
+      where
+        dealtCards = V5.dealCardsRandom c v p g
+    "4" ->
+      (force $ V4.possibleSets dealtCards v p, map (V4.generateCardFromIndex v p) dealtCards)
+      where
+        dealtCards = V4.dealCardsRandom c v p g
+    "3" ->
+      (force $ V3.possibleSets dealtCards v, dealtCards)
+      where
+        dealtCards = V3.dealCardsRandom c v p g
+    "2" ->
+      (force $ V2.possibleSets dealtCards v, dealtCards)
+      where
+        dealtCards = V2.dealCardsRandom c v p g
+    "1" ->
+      (force $ V1.possibleSets dealtCards v, dealtCards)
+      where
+        dealtCards = V1.dealCardsRandom c v p g
     _ -> error "Invalid version"
 
 main :: IO ()
@@ -102,7 +137,7 @@ main = do
             ver <- version
             let presetG = mkStdGen $ read inputSeed
             g <- if presetSeed then return presetG else getStdGen
-            let (res, dealtCardsAsCards) = getVersionResults (read c) (read v) (read p) g (read ver)
+            let (res, dealtCardsAsCards) = getVersionResults (read c) (read v) (read p) g ver
             evalRes <- evaluate res
             when silent exitSuccess
             when deck $ do
