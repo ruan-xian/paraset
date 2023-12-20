@@ -32,14 +32,22 @@ main function: given parameters
   g: a random number generator
 -}
 possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
--- possibleSets dealtCards v p =
---   let preSets = force $ generatePreSets v dealtCards
---       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
---       preSetChunks = chunksOf 10000 preSets
---    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
 possibleSets dealtCards v p =
+  --   let preSets = force $ generatePreSets v dealtCards
+  --       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
+  --       preSetChunks = chunksOf 10000 preSets
+  --    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
+  -- possibleSets dealtCards v p =
+  --   let c = length dealtCards
+  --    in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
+
   let c = length dealtCards
-   in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
+      bitStringChunks = chunksOf 10000 $ getBitstrings c (v - 1)
+   in concat $
+        parMap
+          rseq
+          (mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p))
+          bitStringChunks
 
 --     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
 --  in catMaybes maybeSets
