@@ -6,12 +6,12 @@ module Lib
 where
 
 import Control.DeepSeq
-import Control.Parallel.Strategies (parMap, rseq)
+import Control.Parallel.Strategies (parBuffer, parMap, rseq, using)
 import Data.Bits
 import Data.List (sort)
 import Data.List.Split (chunksOf)
 import Data.Map qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import System.Random (Random (randomR), StdGen)
@@ -32,15 +32,17 @@ main function: given parameters
   g: a random number generator
 -}
 possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
-possibleSets dealtCards v p =
-  --   let preSets = force $ generatePreSets v dealtCards
-  --       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
-  --       preSetChunks = chunksOf 10000 preSets
-  --    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
-  -- possibleSets dealtCards v p =
-  --   let c = length dealtCards
-  --    in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
+-- possibleSets dealtCards v p =
+--   let preSets = force $ generatePreSets v dealtCards
+--       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
+--       preSetChunks = chunksOf 10000 preSets
+--    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
 
+-- possibleSets dealtCards v p =
+--   let c = length dealtCards
+--    in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
+
+possibleSets dealtCards v p =
   let c = length dealtCards
       bitStringChunks = chunksOf 10000 $ getBitstrings c (v - 1)
    in concat $
@@ -48,6 +50,23 @@ possibleSets dealtCards v p =
           rseq
           (mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p))
           bitStringChunks
+
+-- possibleSets dealtCards v p =
+--   let c = length dealtCards
+--    in catMaybes $
+--         parMap
+--           rseq
+--           (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
+--           (getBitstrings c (v - 1))
+
+-- possibleSets dealtCards v p =
+--   let c = length dealtCards
+--    in catMaybes
+--         ( map
+--             (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
+--             (getBitstrings c (v - 1))
+--             `using` parBuffer 1000 rseq
+--         )
 
 --     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
 --  in catMaybes maybeSets
