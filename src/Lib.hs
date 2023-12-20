@@ -7,6 +7,7 @@ where
 
 import Control.DeepSeq
 import Control.Parallel.Strategies (parMap, rseq)
+import Data.Bits
 import Data.List (sort)
 import Data.List.Split (chunksOf)
 import Data.Map qualified as Map
@@ -139,6 +140,25 @@ generatePreSets v = generatePreSets' (v - 1)
     generatePreSets' 0 _ = [[]]
     generatePreSets' _ [] = []
     generatePreSets' n (x : xs) = map (x :) (generatePreSets' (n - 1) xs) ++ generatePreSets' n xs
+
+getBitstrings :: Int -> Int -> [Integer]
+getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
+  where
+    next x =
+      let smallest = x .&. negate x
+          ripple = x + smallest
+          new_smallest = ripple .&. negate ripple
+       in ripple .|. new_smallest `div` smallest `shiftR` 1 - 1
+
+-- bitStringToPreset
+
+{-
+function: given a bitstring, parse it into a preset
+
+bigger function: take bitstring, make a preset, then find the possible set on it
+
+map bigger function over getBitstrings
+-}
 
 {-
   checks if a valid, correctly ordered set is possible
