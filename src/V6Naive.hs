@@ -89,7 +89,7 @@ bitStringToMaybeSet dealtCards dealtCardsSet v bitstring =
   getPossibleSet dealtCardsSet v $ bitStringToPreset dealtCards bitstring
 
 getBitstrings :: Int -> Int -> [Integer]
-getBitstrings n k = takeWhile (< bit n) $ iterate next (bit k - 1)
+getBitstrings n k = takeWhile (< bit (n + 1)) $ iterate next (bit k - 1)
   where
     next x =
       let smallest = x .&. negate x
