@@ -30,46 +30,6 @@ possibleSets dealtCards v =
    in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
 
 {-
-human solution
-[2,1,1,2]  [2,1,2,2]  [2,1,3,2]
-[1,2,1,1]  [1,2,2,3]  [1,2,3,2]
-[1,2,1,1]  [2,1,2,2]  [3,3,3,3]
-[1,1,1,2]  [2,2,2,3]  [3,3,3,1]
-[1,2,2,3]  [2,1,1,2]  [3,3,3,1]
-[1,1,1,2]  [2,2,2,1]  [3,3,3,3]
- -}
-
-{-
-code generated solutions
-   [[1,2,1,1],[1,2,2,3],[1,2,3,2]], 2
-   [[1,2,2,3],[2,1,1,2],[3,3,3,1]], 5
-   [[2,1,1,2],[2,1,2,2],[2,1,3,2]], 1
-   [[1,2,1,1],[2,1,2,2],[3,3,3,3]], 3
-   [[1,1,1,2],[2,2,2,1],[3,3,3,3]], 6
-   [[1,1,1,2],[2,2,2,3],[3,3,3,1]]] 4
--}
-
-{-
-  hard coded for now so we can check
--}
--- dealCards :: Int -> Int -> Int -> [Card]
--- dealCards _ _ _ =
---   sort
---     [ [3, 3, 3, 1],
---       [2, 1, 1, 2],
---       [1, 2, 3, 2],
---       [2, 2, 2, 3],
---       [1, 2, 2, 3],
---       [3, 1, 1, 3],
---       [2, 1, 2, 2],
---       [3, 3, 3, 3],
---       [2, 2, 2, 1],
---       [1, 1, 1, 2],
---       [1, 2, 1, 1],
---       [2, 1, 3, 2]
---     ]
-
-{-
   We generate c randomly dealt cards through generating random "swaps".
   The initial "deck" consists of all cards in sorted order (here, each card
   is represented as a single integer from 0 to v^p - 1, instead of its constituent parts.)
