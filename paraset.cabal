@@ -25,7 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      V6Parbuffer
   other-modules:
       Paths_paraset
   autogen-modules:

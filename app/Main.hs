@@ -3,20 +3,14 @@ module Main (main) where
 import Control.DeepSeq
 import Control.Exception
 import Control.Monad
-import Lib (dealCardsRandom, generateCardFromIndex, possibleSets)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (ExitCode (ExitFailure), die, exitSuccess, exitWith)
 import System.IO
-import System.Random (getStdGen, mkStdGen)
+import System.Random (StdGen, getStdGen, mkStdGen)
+import V6Parbuffer qualified as V6P
 
-data Flag
-  = Silent -- -s
-  | Newline -- -n
-  | Deck -- -d
-  | Help -- --help
-  | Randseed String -- -r
-  deriving (Eq, Show)
+type Card = [Int]
 
 data Options = Options
   { optSilent :: Bool,
@@ -24,7 +18,8 @@ data Options = Options
     optDeck :: Bool,
     optHelp :: Bool,
     optUsePresetSeed :: Bool,
-    optRandSeed :: IO String
+    optRandSeed :: IO String,
+    optVersion :: IO String
   }
 
 startOptions :: Options
@@ -35,7 +30,8 @@ startOptions =
       optDeck = False,
       optHelp = False,
       optUsePresetSeed = False,
-      optRandSeed = return "42"
+      optRandSeed = return "42",
+      optVersion = return "6"
     }
 
 options :: [OptDescr (Options -> IO Options)]
@@ -61,11 +57,25 @@ options =
       (ReqArg (\arg opt -> return opt {optUsePresetSeed = True, optRandSeed = return arg}) "42")
       "Sets the random seed used.",
     Option
+      ['v']
+      ["version"]
+      (ReqArg (\arg opt -> return opt {optVersion = return arg}) "6")
+      "Sets the version used (latest = 6). Valid options: 6P,",
+    Option
       []
       ["help"]
       (NoArg (\opt -> return opt {optHelp = True}))
       "Print this help message"
   ]
+
+getVersionResults :: Int -> Int -> Int -> StdGen -> String -> ([[Card]], [Card])
+getVersionResults c v p g version =
+  case version of
+    "6P" ->
+      (force $ V6P.possibleSets dealtCards v p, map (V6P.generateCardFromIndex v p) dealtCards)
+      where
+        dealtCards = V6P.dealCardsRandom c v p g
+    _ -> error "Invalid version"
 
 main :: IO ()
 main = do
@@ -80,7 +90,8 @@ main = do
                 optDeck = deck,
                 optHelp = help,
                 optUsePresetSeed = presetSeed,
-                optRandSeed = seed
+                optRandSeed = seed,
+                optVersion = version
               } = opts
         when help $ do
           hPutStrLn stderr (usageInfo usage options)
@@ -88,17 +99,18 @@ main = do
         case params of
           [c, v, p] -> do
             inputSeed <- seed
+            ver <- version
             let presetG = mkStdGen $ read inputSeed
             g <- if presetSeed then return presetG else getStdGen
-            let dealtCards = dealCardsRandom (read c) (read v) (read p) g
-            res <- evaluate $ force $ possibleSets dealtCards (read v) (read p)
+            let (res, dealtCardsAsCards) = getVersionResults (read c) (read v) (read p) g (read ver)
+            evalRes <- evaluate res
             when silent exitSuccess
             when deck $ do
               putStrLn "Dealt cards:"
-              print $ map (generateCardFromIndex (read v) (read p)) dealtCards
+              print dealtCardsAsCards
               putStrLn "Solutions:"
             if newline
-              then mapM_ print res
+              then mapM_ print evalRes
               else print res
           _ -> die $ usageInfo usage options
     (_, _, errs) -> do

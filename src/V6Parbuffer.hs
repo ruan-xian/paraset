@@ -1,17 +1,15 @@
-module Lib
+module V6Parbuffer
   ( dealCardsRandom,
     possibleSets,
     generateCardFromIndex,
   )
 where
 
-import Control.DeepSeq
-import Control.Parallel.Strategies (parBuffer, parMap, rseq, using)
-import Data.Bits
+import Control.Parallel.Strategies (parBuffer, rseq, using)
+import Data.Bits (Bits (bit, shiftR, testBit, (.&.), (.|.)))
 import Data.List (sort)
-import Data.List.Split (chunksOf)
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (catMaybes)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import System.Random (Random (randomR), StdGen)
@@ -32,86 +30,14 @@ main function: given parameters
   g: a random number generator
 -}
 possibleSets :: [CardIndex] -> Int -> Int -> [[Card]]
--- possibleSets dealtCards v p =
---   let preSets = force $ generatePreSets v dealtCards
---       --  in mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
---       preSetChunks = chunksOf 10000 preSets
---    in concat $ parMap rseq (mapMaybe (getPossibleSet (Set.fromList dealtCards) v p)) preSetChunks
-
--- possibleSets dealtCards v p =
---   let c = length dealtCards
---    in mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p) (getBitstrings c (v - 1))
-
--- possibleSets dealtCards v p =
---   let c = length dealtCards
---       bitStringChunks = chunksOf 10000 $ getBitstrings c (v - 1)
---    in concat $
---         parMap
---           rseq
---           (mapMaybe (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p))
---           bitStringChunks
-
--- possibleSets dealtCards v p =
---   let c = length dealtCards
---    in catMaybes $
---         parMap
---           rseq
---           (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
---           (getBitstrings c (v - 1))
-
 possibleSets dealtCards v p =
   let c = length dealtCards
    in catMaybes
         ( map
             (bitStringToMaybeSet dealtCards (Set.fromList dealtCards) v p)
             (getBitstrings c (v - 1))
-            `using` parBuffer 1000 rseq
+            `using` parBuffer 10000 rseq
         )
-
---     maybeSets = parMap rseq (getPossibleSet (Set.fromList dealtCards) v) preSets
---  in catMaybes maybeSets
-
--- mapMaybe (getPossibleSet (Set.fromList dealtCards) v) preSets
-
-{-
-human solution
-[2,1,1,2]  [2,1,2,2]  [2,1,3,2]
-[1,2,1,1]  [1,2,2,3]  [1,2,3,2]
-[1,2,1,1]  [2,1,2,2]  [3,3,3,3]
-[1,1,1,2]  [2,2,2,3]  [3,3,3,1]
-[1,2,2,3]  [2,1,1,2]  [3,3,3,1]
-[1,1,1,2]  [2,2,2,1]  [3,3,3,3]
- -}
-
-{-
-code generated solutions
-   [[1,2,1,1],[1,2,2,3],[1,2,3,2]], 2
-   [[1,2,2,3],[2,1,1,2],[3,3,3,1]], 5
-   [[2,1,1,2],[2,1,2,2],[2,1,3,2]], 1
-   [[1,2,1,1],[2,1,2,2],[3,3,3,3]], 3
-   [[1,1,1,2],[2,2,2,1],[3,3,3,3]], 6
-   [[1,1,1,2],[2,2,2,3],[3,3,3,1]]] 4
--}
-
-{-
-  hard coded for now so we can check
--}
--- dealCards :: Int -> Int -> Int -> [Card]
--- dealCards _ _ _ =
---   sort
---     [ [3, 3, 3, 1],
---       [2, 1, 1, 2],
---       [1, 2, 3, 2],
---       [2, 2, 2, 3],
---       [1, 2, 2, 3],
---       [3, 1, 1, 3],
---       [2, 1, 2, 2],
---       [3, 3, 3, 3],
---       [2, 2, 2, 1],
---       [1, 1, 1, 2],
---       [1, 2, 1, 1],
---       [2, 1, 3, 2]
---     ]
 
 {-
   We generate c randomly dealt cards through generating random "swaps".
@@ -166,12 +92,6 @@ https://stackoverflow.com/questions/52602474/function-to-generate-the-unique-com
 faster ones here https://stackoverflow.com/questions/26727673/haskell-comparison-of-techniques-for-generating-combinations
     are not great bc `subsequences` can get really huge if `length dealtCards` is large
 -}
--- generatePreSets :: Int -> [CardIndex] -> [[CardIndex]]
--- generatePreSets v = generatePreSets' (v - 1)
---   where
---     generatePreSets' 0 _ = [[]]
---     generatePreSets' _ [] = []
---     generatePreSets' n (x : xs) = map (x :) (generatePreSets' (n - 1) xs) ++ generatePreSets' n xs
 
 bitStringToMaybeSet :: [CardIndex] -> Set CardIndex -> Int -> Int -> Integer -> Maybe [Card]
 bitStringToMaybeSet dealtCards dealtCardsSet v p bitstring =
