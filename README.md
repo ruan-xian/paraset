@@ -21,14 +21,18 @@ Paraset was an exploration of parallelization; as such, many versions of our alg
 
 ## Example
 ```
-$ stack exec -- paraset-exe -dn -r 69 12 3 4 +RTS -N4           
+$ stack exec -- paraset-exe -dn -v 5 -f "./test/sampleDeal.txt" 12 3 4 +RTS -N8
 Dealt cards:
-[[1,1,2,1],[1,1,3,3],[1,3,1,1],[1,3,2,3],[2,1,2,1],[2,2,1,2],[2,2,2,2],[2,3,1,2],[3,1,1,1],[3,2,3,1],[3,3,1,2],[3,3,2,1]]
+[[1,1,1,2],[1,2,1,1],[1,2,2,3],[1,2,3,2],[2,1,1,2],[2,1,2,2],[2,1,3,2],[2,2,2,1],[2,2,2,3],[3,1,1,3],[3,3,3,1],[3,3,3,3]]
 Solutions:
-[[1,3,1,1],[2,1,2,1],[3,2,3,1]]
-[[1,1,3,3],[2,2,1,2],[3,3,2,1]]
-[[3,1,1,1],[3,2,3,1],[3,3,2,1]]
+[[1,2,1,1],[1,2,2,3],[1,2,3,2]]
+[[2,1,1,2],[2,1,2,2],[2,1,3,2]]
+[[1,2,2,3],[2,1,1,2],[3,3,3,1]]
+[[1,1,1,2],[2,2,2,3],[3,3,3,1]]
+[[1,2,1,1],[2,1,2,2],[3,3,3,3]]
+[[1,1,1,2],[2,2,2,1],[3,3,3,3]]
 ```
+This corresponds to `test/solution.png`. 
 
 ## Usage
 ```
@@ -40,6 +44,7 @@ Flags:
   -s     --silent       Silences all output.
   -d     --deck         Prints the deck generated.
   -n     --newline      Prints each solution on a separate line.
+  -f     --file=        Optional filename containing dealt cards; otherwise randomly generated
   -r 42  --randseed=42  Sets the random seed used.
   -v 6P  --version=6P   Sets the version used (latest = 6P). 
                         Valid options: 6P, 6C, 6, 5, 4, 3, 2, 1
