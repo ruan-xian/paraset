@@ -2,6 +2,7 @@ module V4
   ( dealCardsRandom,
     possibleSets,
     generateCardFromIndex,
+    generateIndexFromCard
   )
 where
 
