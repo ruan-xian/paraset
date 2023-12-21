@@ -12,7 +12,7 @@ To play the game, deal 12 cards. Any number of players try to find a valid set a
 
 <img width="368" alt="Screenshot 2023-12-20 at 6 22 01 PM" src="https://github.com/ruan-xian/paraset/assets/72535898/b8bbba80-9557-4538-853e-aee3ac25285f">
 
-We focus on a generalized game of Set^® by creating a game where `C` cards are dealt, with `p` types of properties that each take on `v` possible values. Thus, the classic game of Set uses `C=12`, `p=4`, and `v=3` (and has a deck of `v^p=3^4=81` unique cards). A card `c` has `p` properties, each of which we will denote as `c[i]` for `1 < i <= p`. 
+We focus on a generalized game of Set^® by creating a game where `C` cards are dealt, with `p` types of properties that each take on `v` possible values. Thus, the classic game of Set uses `C=12`, `p=4`, and `v=3` (and has a deck of `v^p=3^4=81` unique cards). A card `c` has `p` properties, each of which we will denote as `c[i]` for `1 <= i <= p`. 
 A valid set therefore consists of `v` cards `c_1, c_2, ..., c_v` such that for every property `i`, either `c_1[i] = c_2[i] = ... = c_v[i]` or `c_1[i] != c_2[i] != ... != c_v[i]`.
 
 The problem that we solve is as follows: **Given `C` distinct cards (having different properties), determine all valid sets that can be made from a subset of the `C` cards.**
