@@ -1,8 +1,9 @@
 module Main (main) where
 
 import Control.DeepSeq (force)
-import Control.Exception (evaluate)
+import Control.Exception (IOException, catch, evaluate)
 import Control.Monad (when)
+import Data.List (sort)
 import ParsetBase qualified
 import System.Console.GetOpt
   ( ArgDescr (NoArg, ReqArg),
@@ -33,7 +34,8 @@ data Options = Options
     optHelp :: Bool,
     optUsePresetSeed :: Bool,
     optRandSeed :: IO String,
-    optVersion :: IO String
+    optVersion :: IO String,
+    optDealtCardsFile :: Maybe String
   }
 
 startOptions :: Options
@@ -45,7 +47,8 @@ startOptions =
       optHelp = False,
       optUsePresetSeed = False,
       optRandSeed = return "42",
-      optVersion = return "6P"
+      optVersion = return "6P",
+      optDealtCardsFile = Nothing
     }
 
 options :: [OptDescr (Options -> IO Options)]
@@ -66,6 +69,11 @@ options =
       (NoArg (\opt -> return opt {optNewline = True}))
       "Prints each solution on a separate line.",
     Option
+      ['f']
+      ["file"]
+      (ReqArg (\arg opt -> return opt {optDealtCardsFile = Just arg}) "")
+      "Optional filename containing dealt cards; otherwise randomly generated",
+    Option
       ['r']
       ["randseed"]
       (ReqArg (\arg opt -> return opt {optUsePresetSeed = True, optRandSeed = return arg}) "42")
@@ -82,41 +90,27 @@ options =
       "Print this help message"
   ]
 
-getVersionResults :: Int -> Int -> Int -> StdGen -> String -> ([[Card]], [Card])
-getVersionResults c v p g version =
+getVersionResults :: Int -> Int -> Int -> StdGen -> [Card] -> String -> ([[Card]], [Card])
+getVersionResults c v p g dealtCards version =
   case version of
     "6P" ->
       (force $ V6P.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "6C" ->
       (force $ V6C.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "6" ->
       (force $ V6.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "5" ->
       (force $ V5.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "4" ->
-      (force $ V4.possibleSets dealtCards v p, map (V4.generateCardFromIndex v p) dealtCards)
+      (force $ V4.possibleSets dealtCardsV4 v p, map (V4.generateCardFromIndex v p) dealtCardsV4)
       where
-        dealtCards = V4.dealCardsRandom c v p g
+        dealtCardsV4 = V4.dealCardsRandom c v p g
     "3" ->
       (force $ V3.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "2" ->
       (force $ V2.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     "1" ->
       (force $ V1.possibleSets dealtCards v, dealtCards)
-      where
-        dealtCards = ParsetBase.dealCardsRandom c v p g
     _ -> error "Invalid version"
 
 main :: IO ()
@@ -144,7 +138,17 @@ main = do
             ver <- version
             let presetG = mkStdGen $ read inputSeed
             g <- if presetSeed then return presetG else getStdGen
-            let (res, dealtCardsAsCards) = getVersionResults (read c) (read v) (read p) g ver
+
+            dealtCards <- case optDealtCardsFile opts of
+              Just filename -> do
+                contents <- catch (readFile filename) handleReadFileError
+                let parsedContents = reads contents :: [([Card], String)]
+                if null parsedContents
+                  then handleParseError
+                  else return $ sort $ fst $ head parsedContents
+              Nothing -> return $ ParsetBase.dealCardsRandom (read c) (read v) (read p) g
+
+            let (res, dealtCardsAsCards) = getVersionResults (read c) (read v) (read p) g dealtCards ver
             evalRes <- evaluate res
             when silent exitSuccess
             when deck $ do
@@ -160,3 +164,13 @@ main = do
       exitWith (ExitFailure 1)
   where
     usage = "Usage: paraset [flags] <cards dealt> <number of values> <number of traits>"
+
+handleReadFileError :: IOException -> IO String
+handleReadFileError _ = do
+  putStrLn "Error: Could not read the file."
+  exitWith (ExitFailure 1)
+
+handleParseError :: IO [Card]
+handleParseError = do
+  putStrLn "Error: File contents cannot be parsed as Cards. See test/sampleDeal.txt for an example."
+  exitWith (ExitFailure 1)

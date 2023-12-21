@@ -8,6 +8,7 @@ bitStringToMaybeSet :: [Card] -> Set Card -> Int -> Integer -> Maybe [Card]
 bitStringToMaybeSet dealtCards dealtCardsSet v bitstring =
   getPossibleSet dealtCardsSet v $ bitStringToPreset dealtCards bitstring
 
+-- https://stackoverflow.com/questions/37745191/haskell-parallel-code-is-slower-than-sequential-version
 getBitstrings :: Int -> Int -> [Integer]
 getBitstrings n k = takeWhile (< bit (n + 1)) $ iterate next (bit k - 1)
   where
